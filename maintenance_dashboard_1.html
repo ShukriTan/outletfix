@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maintenance Dashboard — Management</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+  :root {
+    --brand:       #1A2E44;
+    --brand-l:     #2C4A6E;
+    --accent:      #F59E0B;
+    --success:     #10B981;
+    --danger:      #EF4444;
+    --warn:        #F97316;
+    --info:        #3B82F6;
+    --mfm-c:       #EF4444;
+    --tr-c:        #F59E0B;
+    --nyss-c:      #3B82F6;
+    --bg:          #EEF2F7;
+    --surface:     #FFFFFF;
+    --border:      #E2E8F0;
+    --text:        #1E293B;
+    --muted:       #64748B;
+    --light:       #94A3B8;
+    --radius:      12px;
+    --shadow:      0 1px 4px rgba(0,0,0,.07);
+    --shadow-md:   0 4px 16px rgba(0,0,0,.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* TOPBAR */
+  .topbar {
+    background: var(--brand); color: #fff;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; height: 58px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,.25);
+  }
+  .topbar-left { display: flex; align-items: center; gap: 16px; }
+  .logo { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
+  .logo span { color: var(--accent); }
+  .mgmt-badge {
+    background: rgba(255,255,255,.12); color: rgba(255,255,255,.8);
+    font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+    letter-spacing: .4px; text-transform: uppercase;
+  }
+  .topbar-right { display: flex; align-items: center; gap: 14px; font-size: 13px; color: rgba(255,255,255,.65); }
+  .notif-badge {
+    background: var(--danger); color: #fff;
+    font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 20px;
+  }
+  .btn-refresh {
+    background: rgba(255,255,255,.12); border: none; color: rgba(255,255,255,.85);
+    padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600;
+    font-family: 'Inter', sans-serif; transition: background .2s;
+  }
+  .btn-refresh:hover { background: rgba(255,255,255,.2); }
+
+  /* BRAND TABS */
+  .brand-row {
+    background: #fff; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 28px; gap: 4px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .brand-row::-webkit-scrollbar { display: none; }
+  .brand-tab-m {
+    padding: 12px 18px; border: none; background: none;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+    color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent;
+    transition: all .2s; white-space: nowrap;
+  }
+  .brand-tab-m:hover { color: var(--text); }
+  .brand-tab-m.active { color: var(--text); border-bottom-color: var(--brand); }
+  .brand-tab-m.mfm.active  { border-bottom-color: var(--mfm-c); color: var(--mfm-c); }
+  .brand-tab-m.tr.active   { border-bottom-color: var(--tr-c);  color: #D97706; }
+  .brand-tab-m.nyss.active { border-bottom-color: var(--nyss-c); color: var(--nyss-c); }
+  .count-chip {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--bg); color: var(--muted);
+    font-size: 10px; font-weight: 700; width: 18px; height: 18px;
+    border-radius: 50%; margin-left: 5px;
+  }
+
+  /* MAIN */
+  .main { padding: 24px 28px; }
+
+  /* KPI ROW */
+  .kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-bottom: 22px; }
+  .kpi {
+    background: var(--surface); border-radius: var(--radius);
+    padding: 18px 16px; border: 1px solid var(--border); box-shadow: var(--shadow);
+    position: relative; overflow: hidden;
+  }
+  .kpi::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .kpi.red::after    { background: var(--danger);  }
+  .kpi.orange::after { background: var(--warn);    }
+  .kpi.blue::after   { background: var(--info);    }
+  .kpi.green::after  { background: var(--success); }
+  .kpi.yellow::after { background: var(--accent);  }
+  .kpi.gray::after   { background: var(--light);   }
+  .kpi-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 5px; }
+  .kpi-val   { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; line-height: 1; }
+  .kpi-sub   { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* TOOLBAR */
+  .toolbar {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .search-wrap { flex: 1; min-width: 180px; position: relative; }
+  .search-wrap input {
+    width: 100%; border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 9px 12px 9px 34px; font-size: 13px; font-family: 'Inter', sans-serif;
+    outline: none; background: #fff; transition: border-color .2s;
+  }
+  .search-wrap input:focus { border-color: var(--brand-l); }
+  .search-wrap::before { content: '🔍'; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; }
+  select.filter {
+    border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 9px 12px; font-size: 13px; font-family: 'Inter', sans-serif;
+    outline: none; background: #fff; color: var(--text); cursor: pointer;
+    -webkit-appearance: none; min-width: 120px;
+  }
+  .btn-sm {
+    padding: 9px 14px; border-radius: 8px; border: none; cursor: pointer;
+    font-size: 12px; font-weight: 600; font-family: 'Inter', sans-serif;
+    display: inline-flex; align-items: center; gap: 5px; transition: all .15s; white-space: nowrap;
+  }
+  .btn-outline { background: #fff; border: 1.5px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--brand); color: var(--brand); }
+  .btn-accent  { background: var(--accent); color: var(--brand); }
+  .btn-accent:hover  { background: #D97706; }
+  .btn-primary-sm { background: var(--brand); color: #fff; }
+  .btn-primary-sm:hover { background: var(--brand-l); }
+
+  /* TABLE */
+  .table-card {
+    background: var(--surface); border-radius: var(--radius);
+    border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden;
+  }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    background: #F8FAFC; padding: 11px 14px;
+    text-align: left; font-size: 10px; font-weight: 700;
+    color: var(--muted); text-transform: uppercase; letter-spacing: .7px;
+    white-space: nowrap; cursor: pointer; user-select: none;
+  }
+  thead th:hover { color: var(--brand); }
+  tbody tr { border-top: 1px solid var(--border); transition: background .1s; cursor: pointer; }
+  tbody tr:hover { background: #F8FAFD; }
+  tbody td { padding: 12px 14px; vertical-align: middle; }
+  .td-id    { font-family: 'Space Grotesk', sans-serif; font-weight: 600; color: var(--muted); font-size: 11px; }
+  .brand-tag {
+    display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px;
+    border-radius: 4px; letter-spacing: .3px; white-space: nowrap;
+  }
+  .brand-MFM  { background: #FEE2E2; color: #B91C1C; }
+  .brand-TR   { background: #FEF3C7; color: #92400E; }
+  .brand-NYSS { background: #DBEAFE; color: #1E40AF; }
+
+  .pill {
+    display: inline-flex; align-items: center; padding: 3px 9px;
+    border-radius: 20px; font-size: 10px; font-weight: 700; white-space: nowrap;
+  }
+  .pill-red    { background: #FEE2E2; color: #B91C1C; }
+  .pill-orange { background: #FFEDD5; color: #C2410C; }
+  .pill-blue   { background: #DBEAFE; color: #1D4ED8; }
+  .pill-green  { background: #D1FAE5; color: #065F46; }
+  .pill-gray   { background: #F1F5F9; color: var(--muted); }
+
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 9px; border-radius: 20px; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .4px;
+  }
+  .status-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .s-open       { background: #FEE2E2; color: #B91C1C; }
+  .s-open::before { background: #EF4444; }
+  .s-inprogress { background: #FFEDD5; color: #C2410C; }
+  .s-inprogress::before { background: #F97316; }
+  .s-pending    { background: #DBEAFE; color: #1D4ED8; }
+  .s-pending::before { background: #3B82F6; }
+  .s-closed     { background: #D1FAE5; color: #065F46; }
+  .s-closed::before { background: #10B981; }
+
+  .td-cost { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 12px; }
+  .photo-thumb-row { display: flex; gap: 4px; }
+  .photo-thumb { width: 32px; height: 32px; border-radius: 5px; object-fit: cover; border: 1px solid var(--border); }
+  .photo-more  { width: 32px; height: 32px; border-radius: 5px; background: var(--bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--muted); }
+
+  .table-footer {
+    padding: 13px 18px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12px; color: var(--muted);
+  }
+  .pagination { display: flex; gap: 5px; }
+  .page-btn {
+    padding: 4px 10px; border-radius: 6px; border: 1.5px solid var(--border);
+    background: #fff; font-size: 11px; font-weight: 600; cursor: pointer;
+    font-family: 'Inter', sans-serif; color: var(--muted);
+  }
+  .page-btn.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center; padding: 60px 20px;
+    color: var(--muted); font-size: 14px;
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { margin-bottom: 8px; }
+
+  /* MODAL */
+  .overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.5); z-index: 200;
+    align-items: flex-start; justify-content: center;
+    padding: 40px 20px; overflow-y: auto;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border-radius: 16px; width: 100%; max-width: 680px;
+    padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,.3); position: relative;
+    margin: auto;
+  }
+  .modal-close {
+    position: absolute; top: 16px; right: 16px;
+    background: var(--bg); border: none; border-radius: 8px;
+    width: 30px; height: 30px; cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center; color: var(--muted);
+  }
+  .modal-close:hover { background: var(--border); }
+  .modal-header { margin-bottom: 20px; }
+  .modal-ticket { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .6px; text-transform: uppercase; margin-bottom: 4px; }
+  .modal-title  { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 700; margin-bottom: 6px; }
+  .modal-meta   { font-size: 12px; color: var(--muted); }
+
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .detail-item label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; display: block; margin-bottom: 4px; }
+  .detail-item p { font-size: 13px; font-weight: 500; }
+
+  .desc-box { background: var(--bg); border-radius: 8px; padding: 12px 14px; font-size: 13px; line-height: 1.6; margin-bottom: 20px; }
+  .desc-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+
+  .photos-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .modal-photo { width: 90px; height: 90px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); cursor: pointer; transition: transform .15s; }
+  .modal-photo:hover { transform: scale(1.05); }
+  .no-photos { font-size: 13px; color: var(--muted); }
+
+  .timeline-mini { border-left: 2px solid var(--border); padding-left: 16px; margin-bottom: 20px; }
+  .tl-item { position: relative; margin-bottom: 10px; }
+  .tl-item::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--brand); position: absolute; left: -21px; top: 4px; border: 2px solid #fff; outline: 2px solid var(--brand); }
+  .tl-item .tl-date { font-size: 11px; font-weight: 700; color: var(--muted); }
+  .tl-item .tl-text { font-size: 13px; }
+
+  .update-section { border-top: 1px solid var(--border); padding-top: 18px; margin-top: 4px; }
+  .update-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+  .update-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .update-row select, .update-row input {
+    width: 100%; border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font-size: 13px; font-family: 'Inter', sans-serif;
+    outline: none;
+  }
+  .update-row select:focus, .update-row input:focus { border-color: var(--brand-l); }
+  .update-notes {
+    width: 100%; border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font-size: 13px; font-family: 'Inter', sans-serif;
+    outline: none; resize: vertical; min-height: 60px; margin-bottom: 12px;
+  }
+  .action-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn-modal {
+    padding: 10px 18px; border-radius: 8px; border: 1.5px solid;
+    cursor: pointer; font-size: 13px; font-weight: 600;
+    font-family: 'Inter', sans-serif; transition: all .15s;
+  }
+  .btn-modal.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .btn-modal.primary:hover { background: var(--brand-l); }
+  .btn-modal.success { background: var(--success); border-color: var(--success); color: #fff; }
+  .btn-modal.outline { background: #fff; border-color: var(--border); color: var(--text); }
+
+  /* Lightbox */
+  .lightbox {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.92); z-index: 300;
+    align-items: center; justify-content: center;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
+  .lightbox-close { position: fixed; top: 20px; right: 20px; color: #fff; font-size: 28px; cursor: pointer; background: none; border: none; }
+
+  /* toast */
+  .toast {
+    display: none; position: fixed; bottom: 28px; right: 28px;
+    background: var(--success); color: #fff;
+    padding: 13px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
+    z-index: 500; box-shadow: 0 6px 20px rgba(16,185,129,.4);
+    animation: su .3s ease;
+  }
+  @keyframes su { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* Demo data note */
+  .demo-note {
+    background: #FFFBEB; border: 1px solid #FDE68A;
+    border-radius: 10px; padding: 12px 16px; font-size: 12px; color: #92400E;
+    margin-bottom: 16px; display: flex; gap: 8px; align-items: flex-start;
+  }
+
+  @media (max-width: 900px) {
+    .kpi-row { grid-template-columns: repeat(3,1fr); }
+    .detail-grid { grid-template-columns: 1fr 1fr; }
+    .main { padding: 16px; }
+    .topbar { padding: 0 16px; }
+  }
+  @media (max-width: 500px) {
+    .kpi-row { grid-template-columns: repeat(2,1fr); }
+    .update-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">Outlet<span>Fix</span></div>
+    <span class="mgmt-badge">Management Dashboard</span>
+  </div>
+  <div class="topbar-right">
+    <span>Open: <span class="notif-badge" id="open-badge">—</span></span>
+    <button class="btn-refresh" onclick="loadData()">🔄 Refresh</button>
+    <button class="btn-refresh" onclick="exportCSV()">⬇ Export CSV</button>
+  </div>
+</div>
+
+<!-- BRAND TABS -->
+<div class="brand-row">
+  <button class="brand-tab-m active" onclick="setBrandFilter('')"      id="btab-all">All Brands</button>
+  <button class="brand-tab-m mfm"    onclick="setBrandFilter('MFM')"   id="btab-MFM">🐟 Manhattan Fish Market <span class="count-chip" id="cnt-MFM">0</span></button>
+  <button class="brand-tab-m tr"     onclick="setBrandFilter('TR')"    id="btab-TR">🥩 Tony Roma's <span class="count-chip" id="cnt-TR">0</span></button>
+  <button class="brand-tab-m nyss"   onclick="setBrandFilter('NYSS')"  id="btab-NYSS">🗽 NY Steak Shack <span class="count-chip" id="cnt-NYSS">0</span></button>
+</div>
+
+<div class="main">
+
+  <div class="demo-note" id="demo-note">
+    💡 <span><strong>Demo mode:</strong> Sample tickets are loaded below. When your technicians submit reports via the Form link, their tickets will appear here automatically (both files must be opened from the same browser). Click any row to view details and update status.</span>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi red">
+      <div class="kpi-label">Open</div>
+      <div class="kpi-val" id="kpi-open">—</div>
+      <div class="kpi-sub">Needs action</div>
+    </div>
+    <div class="kpi orange">
+      <div class="kpi-label">In Progress</div>
+      <div class="kpi-val" id="kpi-progress">—</div>
+      <div class="kpi-sub">Being repaired</div>
+    </div>
+    <div class="kpi blue">
+      <div class="kpi-label">Pending Approval</div>
+      <div class="kpi-val" id="kpi-pending">—</div>
+      <div class="kpi-sub">Awaiting cost OK</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">Closed (MTD)</div>
+      <div class="kpi-val" id="kpi-closed">—</div>
+      <div class="kpi-sub">This month</div>
+    </div>
+    <div class="kpi yellow">
+      <div class="kpi-label">Total Cost (MTD)</div>
+      <div class="kpi-val" id="kpi-cost" style="font-size:18px;margin-top:2px;">—</div>
+      <div class="kpi-sub" id="kpi-month">—</div>
+    </div>
+    <div class="kpi gray">
+      <div class="kpi-label">Total Tickets</div>
+      <div class="kpi-val" id="kpi-total">—</div>
+      <div class="kpi-sub">All time</div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <input type="text" id="q" placeholder="Search ticket, outlet, issue..." oninput="filterTable()">
+    </div>
+    <select class="filter" id="f-status" onchange="filterTable()">
+      <option value="">All Statuses</option>
+      <option value="Open">Open</option>
+      <option value="In Progress">In Progress</option>
+      <option value="Pending">Pending Approval</option>
+      <option value="Closed">Closed</option>
+    </select>
+    <select class="filter" id="f-priority" onchange="filterTable()">
+      <option value="">All Priorities</option>
+      <option value="Critical">Critical</option>
+      <option value="High">High</option>
+      <option value="Medium">Medium</option>
+      <option value="Low">Low</option>
+    </select>
+    <select class="filter" id="f-outlet-f" onchange="filterTable()">
+      <option value="">All Outlets</option>
+    </select>
+    <select class="filter" id="f-category-f" onchange="filterTable()">
+      <option value="">All Categories</option>
+    </select>
+    <button class="btn-sm btn-outline" onclick="clearFilters()">✕ Clear</button>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>TICKET</th>
+            <th>BRAND</th>
+            <th>OUTLET</th>
+            <th>CATEGORY</th>
+            <th>ISSUE</th>
+            <th>PRIORITY</th>
+            <th>STATUS</th>
+            <th>DATE</th>
+            <th>ACTUAL COST</th>
+            <th>PHOTOS</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <span id="row-count">—</span>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── SEED DATA (shown until real tickets come in) ──
+const SEED = [
+  { id:'TKT-0023', brand:'MFM', brandName:'Manhattan Fish Market', outlet:'IOI City Mall', reporter:'Siti Aisyah', role:'Outlet Manager', phone:'012-3456789', category:'Electrical', area:'Dining Area', title:'Main DB trips — half the lights out', desc:'Main distribution board keeps tripping. Half the dining area lights are out. Customers affected. Started since morning shift. Urgent fix needed.', priority:'Critical', impact:'Revenue impacted — significant disruption', estCost:'RM 800', actualCost:'—', vendor:'No — please arrange from HQ', vendorName:'', notes:'', photos:[], status:'Open', date:'15 Jun 2026', submitted:'2026-06-15T08:22:00', timeline:['15 Jun — Reported by Siti Aisyah','Awaiting vendor assignment'], assigned:'TBC' },
+  { id:'TKT-0022', brand:'MFM', brandName:'Manhattan Fish Market', outlet:'Midvalley', reporter:'Ramesh Kumar', role:'Outlet Manager', phone:'011-9876543', category:'Refrigeration', area:'Kitchen', title:'Walk-in chiller temp rising to 12°C', desc:'Walk-in chiller temperature rose to 12°C, normal is 3°C. Risk of food spoilage. Compressor making loud clicking noise. All stock at risk.', priority:'Critical', impact:'Revenue impacted — significant disruption', estCost:'RM 1,200', actualCost:'RM 1,200', vendor:'Yes — our regular vendor contacted', vendorName:'CoolTech Sdn Bhd', notes:'Parts ordered, fix today.', photos:[], status:'In Progress', date:'14 Jun 2026', submitted:'2026-06-14T13:10:00', timeline:['14 Jun — Reported by Ramesh','14 Jun 14:00 — CoolTech Sdn Bhd dispatched','15 Jun 09:00 — Compressor parts ordered'], assigned:'CoolTech Sdn Bhd' },
+  { id:'TKT-0021', brand:'TR', brandName:"Tony Roma's", outlet:'IOI City Mall', reporter:'Farah Liyana', role:'Shift Supervisor', phone:'013-1122334', category:'Plumbing', area:'Customer Toilet', title:'Customer toilet blocked & overflowing', desc:'Customer toilet 2 is blocked and water is overflowing. Area closed with signage. Several customer complaints received.', priority:'High', impact:'Partially operational — some areas affected', estCost:'—', actualCost:'—', vendor:'No — please arrange from HQ', vendorName:'', notes:'Cone placed, door locked.', photos:[], status:'Open', date:'14 Jun 2026', submitted:'2026-06-14T09:55:00', timeline:["14 Jun — Reported by Farah","Pending vendor assignment"], assigned:'TBC' },
+  { id:'TKT-0020', brand:'MFM', brandName:'Manhattan Fish Market', outlet:'Subang Parade', reporter:'Hazwan Ridzuan', role:'Outlet Manager', phone:'016-5544332', category:'Air Conditioning / Ventilation', area:'Dining Area', title:'AC unit Level 2 not cooling', desc:'Dining area AC unit on Level 2 not cooling. Compressor appears to be faulty. Indoor unit running but blowing warm air. Customer complaints.', priority:'High', impact:'Partially operational — some areas affected', estCost:'RM 480', actualCost:'RM 480', vendor:'Yes — our regular vendor contacted', vendorName:'AirMaster Services', notes:'', photos:[], status:'In Progress', date:'13 Jun 2026', submitted:'2026-06-13T11:30:00', timeline:['13 Jun — Reported','13 Jun 15:00 — AirMaster inspected','Compressor replacement in progress'], assigned:'AirMaster Services' },
+  { id:'TKT-0019', brand:'NYSS', brandName:'New York Steak Shack', outlet:'Setapak Central', reporter:'Nurul Ain', role:'Outlet Manager', phone:'017-8899001', category:'Kitchen Equipment', area:'Kitchen', title:"Fryer #2 heating element failed", desc:'Fryer #2 heating element not working. Only 1 fryer operational during peak hours. Queue times increasing. Submitted estimate for approval.', priority:'High', impact:'Revenue impacted — significant disruption', estCost:'RM 750', actualCost:'—', vendor:'Yes — vendor is on the way', vendorName:'KitchenPro Services', notes:'Need approval before work begins.', photos:[], status:'Pending', date:'12 Jun 2026', submitted:'2026-06-12T16:00:00', timeline:['12 Jun — Reported by Nurul','13 Jun — Cost estimate RM750 submitted','Awaiting approval (>RM500)'], assigned:'KitchenPro Services' },
+  { id:'TKT-0018', brand:'MFM', brandName:'Manhattan Fish Market', outlet:'Shah Alam (Hextar Empire City)', reporter:'Saiful Bahri', role:'Outlet Manager', phone:'019-2233445', category:'Flooring', area:'Entrance / Facade', title:'3 floor tiles cracked near entrance', desc:'3 tiles near the main entrance cracked. Potential trip hazard for customers. Area cordoned off with cone. Cosmetic and safety issue.', priority:'Medium', impact:'Fully operational — minor inconvenience', estCost:'RM 220', actualCost:'RM 220', vendor:'Yes — our regular vendor contacted', vendorName:'Hanif Contractor', notes:'Repair scheduled 16 Jun.', photos:[], status:'In Progress', date:'11 Jun 2026', submitted:'2026-06-11T10:00:00', timeline:['11 Jun — Reported','12 Jun — Hanif Contractor assigned','Materials purchased, repair 16 Jun'], assigned:'Hanif Contractor' },
+  { id:'TKT-0017', brand:'TR', brandName:"Tony Roma's", outlet:'JBCC', reporter:'Priya Nair', role:'Shift Supervisor', phone:'012-6677889', category:'POS / Technology', area:'Cashier / POS', title:'POS terminal 3 receipt printer down', desc:'POS terminal 3 receipt printer not responding. Other terminals working fine. Customers being redirected to other counters.', priority:'Medium', impact:'Fully operational — minor inconvenience', estCost:'RM 0', actualCost:'RM 0', vendor:'No — please arrange from HQ', vendorName:'IT Support (HQ)', notes:'Resolved remotely by IT.', photos:[], status:'Closed', date:'10 Jun 2026', submitted:'2026-06-10T14:00:00', timeline:['10 Jun — Reported','10 Jun 16:00 — IT Support connected remotely','10 Jun 17:00 — Resolved (driver reinstall)'], assigned:'IT Support (HQ)' },
+  { id:'TKT-0016', brand:'MFM', brandName:'Manhattan Fish Market', outlet:'Melawati Mall', reporter:'Azman Said', role:'Outlet Manager', phone:'016-1234567', category:'Plumbing', area:'Kitchen', title:'Handwash sink draining slowly', desc:'Kitchen handwash sink draining very slowly. Likely grease buildup in the trap. No immediate impact but may worsen.', priority:'Low', impact:'Fully operational — minor inconvenience', estCost:'RM 80', actualCost:'RM 80', vendor:'Yes — our regular vendor contacted', vendorName:'Local Plumber', notes:'', photos:[], status:'Closed', date:'08 Jun 2026', submitted:'2026-06-08T09:00:00', timeline:["08 Jun — Reported","10 Jun — Plumber attended","10 Jun — Drain cleared, resolved"], assigned:'Local Plumber' },
+  { id:'TKT-0015', brand:'NYSS', brandName:'New York Steak Shack', outlet:'IOI City Mall', reporter:'Shazwan Rizal', role:'Outlet Manager', phone:'012-9998887', category:'Signage / Lighting', area:'Entrance / Facade', title:'Exterior signboard LED flickering', desc:'Exterior LED signboard flickering, visible from the corridor. Causes confusion at night. Affects brand image.', priority:'Low', impact:'Fully operational — minor inconvenience', estCost:'RM 150', actualCost:'RM 150', vendor:'Yes — our regular vendor contacted', vendorName:'SignBright Co.', notes:'', photos:[], status:'Closed', date:'07 Jun 2026', submitted:'2026-06-07T11:00:00', timeline:['07 Jun — Reported','09 Jun — SignBright replaced LED driver','Resolved'], assigned:'SignBright Co.' },
+  { id:'TKT-0014', brand:'MFM', brandName:'Manhattan Fish Market', outlet:'Sunway Putra', reporter:'Lim Wei Ming', role:'Outlet Manager', phone:'011-5566778', category:'Pest Control', area:'Storage Room', title:'Cockroach sighting in dry storage', desc:'Multiple cockroach sightings in dry storage room. Area sealed immediately. Emergency pest control required to prevent food safety breach.', priority:'High', impact:'Partially operational — some areas affected', estCost:'RM 600', actualCost:'RM 600', vendor:'Yes — our regular vendor contacted', vendorName:'PestAway Sdn Bhd', notes:'Monitoring ongoing.', photos:[], status:'Closed', date:'03 Jun 2026', submitted:'2026-06-03T08:30:00', timeline:['03 Jun — Reported','04 Jun — PestAway fogging done','Monitoring — no further sightings'], assigned:'PestAway Sdn Bhd' },
+  { id:'TKT-0013', brand:'MFM', brandName:'Manhattan Fish Market', outlet:'Mahkota Parade', reporter:'Rashidah Mohd', role:'Outlet Manager', phone:'017-3344556', category:'Ceiling / Roof', area:'Dining Area', title:'Water stain on ceiling — possible leak', desc:'Water stain on dining area ceiling. Unit above suspected to have a/c drip tray overflow. Needs ceiling inspection and repair.', priority:'Medium', impact:'Fully operational — minor inconvenience', estCost:'RM 1,100', actualCost:'—', vendor:'Yes — our regular vendor contacted', vendorName:'StarBuild Contractor', notes:'Quote submitted, pending approval.', photos:[], status:'Pending', date:'01 Jun 2026', submitted:'2026-06-01T10:00:00', timeline:['01 Jun — Reported','05 Jun — Contractor quoted RM1,100','Pending approval (>RM500)'], assigned:'StarBuild Contractor' },
+  { id:'TKT-0012', brand:'MFM', brandName:'Manhattan Fish Market', outlet:"Lotus's Kepong", reporter:'Hafiz Noor', role:'Shift Supervisor', phone:'013-8877665', category:'Electrical', area:'Kitchen', title:'Power socket sparking near grill station', desc:'Power socket near grill station sparking when plugged in. Fire risk — socket disabled immediately. Need replacement urgently.', priority:'Critical', impact:'Revenue impacted — significant disruption', estCost:'RM 320', actualCost:'RM 320', vendor:'Yes — vendor is on the way', vendorName:'Ahmad Electrician', notes:'Socket disabled, using extension from next socket.', photos:[], status:'Closed', date:'30 May 2026', submitted:'2026-05-30T07:45:00', timeline:['30 May — Reported','30 May (same day) — Ahmad replaced socket','Resolved — fire risk cleared'], assigned:'Ahmad Electrician' },
+];
+
+let allTickets = [];
+let filtered   = [];
+let brandFilter = '';
+let currentPage = 1;
+const PER_PAGE = 15;
+let currentTicketId = null;
+
+function loadData() {
+  const stored = localStorage.getItem('maint_tickets');
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      allTickets = parsed.length > 0 ? parsed : SEED;
+      document.getElementById('demo-note').style.display = parsed.length > 0 ? 'none' : 'flex';
+    } catch(e) { allTickets = SEED; }
+  } else {
+    allTickets = SEED;
+  }
+  populateFilters();
+  updateCounts();
+  filterTable();
+  updateKPIs();
+}
+
+function populateFilters() {
+  // outlets
+  const outlets = [...new Set(allTickets.map(t => t.outlet))].sort();
+  const sel = document.getElementById('f-outlet-f');
+  sel.innerHTML = '<option value="">All Outlets</option>';
+  outlets.forEach(o => { const opt = document.createElement('option'); opt.value = o; opt.textContent = o; sel.appendChild(opt); });
+  // categories
+  const cats = [...new Set(allTickets.map(t => t.category))].sort();
+  const csel = document.getElementById('f-category-f');
+  csel.innerHTML = '<option value="">All Categories</option>';
+  cats.forEach(c => { const opt = document.createElement('option'); opt.value = c; opt.textContent = c; csel.appendChild(opt); });
+}
+
+function updateCounts() {
+  ['MFM','TR','NYSS'].forEach(b => {
+    document.getElementById('cnt-' + b).textContent = allTickets.filter(t => t.brand === b).length;
+  });
+  document.getElementById('open-badge').textContent = allTickets.filter(t => t.status === 'Open').length;
+}
+
+function updateKPIs() {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const mtd = allTickets.filter(t => new Date(t.submitted) >= monthStart);
+  document.getElementById('kpi-open').textContent     = allTickets.filter(t => t.status === 'Open').length;
+  document.getElementById('kpi-progress').textContent = allTickets.filter(t => t.status === 'In Progress').length;
+  document.getElementById('kpi-pending').textContent  = allTickets.filter(t => t.status === 'Pending').length;
+  document.getElementById('kpi-closed').textContent   = mtd.filter(t => t.status === 'Closed').length;
+  document.getElementById('kpi-total').textContent    = allTickets.length;
+  let totalCost = 0;
+  mtd.forEach(t => {
+    if (t.actualCost && t.actualCost !== '—') {
+      const n = parseFloat(t.actualCost.replace('RM ','').replace(/,/g,''));
+      if (!isNaN(n)) totalCost += n;
+    }
+  });
+  document.getElementById('kpi-cost').textContent = totalCost > 0 ? 'RM ' + totalCost.toLocaleString() : 'RM 0';
+  document.getElementById('kpi-month').textContent = now.toLocaleString('en-MY', { month: 'long', year: 'numeric' });
+}
+
+function setBrandFilter(b) {
+  brandFilter = b;
+  document.querySelectorAll('.brand-tab-m').forEach(t => t.classList.remove('active'));
+  document.getElementById(b ? 'btab-' + b : 'btab-all').classList.add('active');
+  currentPage = 1;
+  filterTable();
+}
+
+function filterTable() {
+  const q  = document.getElementById('q').value.toLowerCase();
+  const st = document.getElementById('f-status').value;
+  const pr = document.getElementById('f-priority').value;
+  const ot = document.getElementById('f-outlet-f').value;
+  const ct = document.getElementById('f-category-f').value;
+
+  filtered = allTickets.filter(t =>
+    (!brandFilter || t.brand === brandFilter) &&
+    (!q  || [t.id, t.outlet, t.title, t.category, t.reporter, t.vendorName, t.brandName].join(' ').toLowerCase().includes(q)) &&
+    (!st || t.status === st) &&
+    (!pr || t.priority === pr) &&
+    (!ot || t.outlet === ot) &&
+    (!ct || t.category === ct)
+  );
+  renderTable();
+}
+
+function clearFilters() {
+  document.getElementById('q').value = '';
+  ['f-status','f-priority','f-outlet-f','f-category-f'].forEach(id => document.getElementById(id).selectedIndex = 0);
+  brandFilter = ''; 
+  document.querySelectorAll('.brand-tab-m').forEach(t => t.classList.remove('active'));
+  document.getElementById('btab-all').classList.add('active');
+  currentPage = 1;
+  filterTable();
+}
+
+function renderTable() {
+  const start = (currentPage - 1) * PER_PAGE;
+  const page  = filtered.slice(start, start + PER_PAGE);
+  const tb = document.getElementById('tbody');
+
+  if (filtered.length === 0) {
+    tb.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="icon">🔍</div><p>No tickets match your filters.</p></div></td></tr>`;
+    document.getElementById('row-count').textContent = '0 results';
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  tb.innerHTML = page.map(t => {
+    const photoHtml = t.photos && t.photos.length > 0
+      ? `<div class="photo-thumb-row">${t.photos.slice(0,2).map(p => `<img class="photo-thumb" src="${p}">`).join('')}${t.photos.length > 2 ? `<div class="photo-more">+${t.photos.length-2}</div>` : ''}</div>`
+      : `<span style="font-size:11px;color:var(--light)">None</span>`;
+    return `
+      <tr onclick="openModal('${t.id}')">
+        <td class="td-id">${t.id}</td>
+        <td><span class="brand-tag brand-${t.brand}">${t.brand}</span></td>
+        <td style="font-weight:600;white-space:nowrap;">${t.outlet}</td>
+        <td style="color:var(--muted);white-space:nowrap;">${t.category}</td>
+        <td style="max-width:200px;">${t.title}</td>
+        <td>${priorityPill(t.priority)}</td>
+        <td>${statusPill(t.status)}</td>
+        <td style="white-space:nowrap;font-size:12px;">${t.date}</td>
+        <td class="td-cost">${t.actualCost}</td>
+        <td>${photoHtml}</td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('row-count').textContent = `Showing ${start+1}–${Math.min(start+PER_PAGE, filtered.length)} of ${filtered.length}`;
+
+  // Pagination
+  const pages = Math.ceil(filtered.length / PER_PAGE);
+  const pg = document.getElementById('pagination');
+  pg.innerHTML = '';
+  for (let i = 1; i <= Math.min(pages, 7); i++) {
+    const btn = document.createElement('button');
+    btn.className = 'page-btn' + (i === currentPage ? ' active' : '');
+    btn.textContent = i;
+    btn.onclick = () => { currentPage = i; renderTable(); };
+    pg.appendChild(btn);
+  }
+}
+
+function priorityPill(p) {
+  const m = { Critical:'pill-red', High:'pill-orange', Medium:'pill-blue', Low:'pill-green' };
+  const e = { Critical:'🔴', High:'🟠', Medium:'🔵', Low:'🟢' };
+  return `<span class="pill ${m[p]||'pill-gray'}">${e[p]||''} ${p}</span>`;
+}
+function statusPill(s) {
+  const m = { Open:'s-open', 'In Progress':'s-inprogress', Pending:'s-pending', Closed:'s-closed' };
+  return `<span class="status-pill ${m[s]||'s-open'}">${s}</span>`;
+}
+
+// MODAL
+function openModal(id) {
+  const t = allTickets.find(x => x.id === id);
+  if (!t) return;
+  currentTicketId = id;
+
+  const photosHtml = t.photos && t.photos.length > 0
+    ? t.photos.map((p,i) => `<img class="modal-photo" src="${p}" onclick="openLightbox('${p}')" title="Click to enlarge">`).join('')
+    : `<p class="no-photos">No photos attached</p>`;
+
+  const timelineHtml = (t.timeline || []).map(e => {
+    const parts = e.split(' — ');
+    return `<div class="tl-item"><div class="tl-date">${parts[0]}</div><div class="tl-text">${parts.slice(1).join(' — ') || ''}</div></div>`;
+  }).join('');
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="modal-header">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+        <div>
+          <div class="modal-ticket">${t.id} · <span class="brand-tag brand-${t.brand}">${t.brand}</span></div>
+          <div class="modal-title">${t.title}</div>
+          <div class="modal-meta">${t.brandName} · ${t.outlet} · Reported ${t.date} by ${t.reporter} (${t.role || 'Staff'}) · ${t.phone}</div>
+        </div>
+        <div>${statusPill(t.status)}</div>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <div class="detail-item"><label>Priority</label><p>${priorityPill(t.priority)}</p></div>
+      <div class="detail-item"><label>Category</label><p>${t.category}</p></div>
+      <div class="detail-item"><label>Area</label><p>${t.area || '—'}</p></div>
+      <div class="detail-item"><label>Impact</label><p style="font-size:12px;">${t.impact || '—'}</p></div>
+      <div class="detail-item"><label>Assigned To</label><p>${t.assigned || 'TBC'}</p></div>
+      <div class="detail-item"><label>Vendor</label><p>${t.vendorName || t.vendor || '—'}</p></div>
+      <div class="detail-item"><label>Est. Cost</label><p style="font-family:'Space Grotesk',sans-serif;font-weight:700;">${t.estCost || '—'}</p></div>
+      <div class="detail-item"><label>Actual Cost</label><p style="font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--success);">${t.actualCost || '—'}</p></div>
+    </div>
+
+    <div class="desc-label">Description</div>
+    <div class="desc-box">${t.desc}</div>
+    ${t.notes ? `<div class="desc-label">Additional Notes</div><div class="desc-box" style="margin-bottom:20px;">${t.notes}</div>` : ''}
+
+    <div class="desc-label" style="margin-bottom:10px;">Photos (${t.photos ? t.photos.length : 0})</div>
+    <div class="photos-row" style="margin-bottom:20px;">${photosHtml}</div>
+
+    <div class="desc-label" style="margin-bottom:10px;">Activity Timeline</div>
+    <div class="timeline-mini">${timelineHtml}</div>
+
+    <div class="update-section">
+      <div class="update-label">Update This Ticket</div>
+      <div class="update-row">
+        <select id="u-status">
+          <option ${t.status==='Open'?'selected':''}>Open</option>
+          <option ${t.status==='In Progress'?'selected':''}>In Progress</option>
+          <option ${t.status==='Pending'?'selected':''}>Pending</option>
+          <option ${t.status==='Closed'?'selected':''}>Closed</option>
+        </select>
+        <input id="u-cost" type="number" placeholder="Actual Cost (RM)" value="${t.actualCost && t.actualCost !== '—' ? t.actualCost.replace('RM ','').replace(/,/g,'') : ''}">
+      </div>
+      <div class="update-row">
+        <input id="u-assigned" type="text" placeholder="Assigned To (vendor/technician)" value="${t.assigned !== 'TBC' ? t.assigned : ''}">
+        <input id="u-vendor" type="text" placeholder="Vendor/Technician Name" value="${t.vendorName || ''}">
+      </div>
+      <textarea class="update-notes" id="u-note" placeholder="Add a timeline note (e.g. 'Vendor arrived, parts needed')..."></textarea>
+      <div class="action-row">
+        <button class="btn-modal primary" onclick="saveTicket('${t.id}')">💾 Save Changes</button>
+        <button class="btn-modal success" onclick="alert('In production: WhatsApp/Email notification sent to Area Manager for ${t.outlet}')">📲 Notify Manager</button>
+        <button class="btn-modal outline" onclick="closeModal()">Close</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('overlay').classList.add('open');
+}
+
+function saveTicket(id) {
+  const t = allTickets.find(x => x.id === id);
+  if (!t) return;
+  const newStatus = document.getElementById('u-status').value;
+  const costVal   = document.getElementById('u-cost').value;
+  const assigned  = document.getElementById('u-assigned').value;
+  const vendor    = document.getElementById('u-vendor').value;
+  const note      = document.getElementById('u-note').value.trim();
+
+  t.status      = newStatus;
+  t.actualCost  = costVal ? 'RM ' + parseFloat(costVal).toLocaleString() : t.actualCost;
+  t.assigned    = assigned || t.assigned;
+  t.vendorName  = vendor || t.vendorName;
+
+  if (note) {
+    const now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+    t.timeline.push(now + ' — ' + note);
+  }
+
+  // Persist
+  const stored = JSON.parse(localStorage.getItem('maint_tickets') || '[]');
+  const idx = stored.findIndex(x => x.id === id);
+  if (idx > -1) { stored[idx] = t; localStorage.setItem('maint_tickets', JSON.stringify(stored)); }
+
+  closeModal();
+  updateCounts();
+  updateKPIs();
+  filterTable();
+  showToast('✅ Ticket ' + id + ' updated successfully');
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+  currentTicketId = null;
+}
+document.getElementById('overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('overlay')) closeModal();
+});
+
+// LIGHTBOX
+function openLightbox(src) { document.getElementById('lightbox-img').src = src; document.getElementById('lightbox').classList.add('open'); }
+function closeLightbox()   { document.getElementById('lightbox').classList.remove('open'); }
+
+// EXPORT
+function exportCSV() {
+  const h = ['Ticket ID','Brand','Outlet','Category','Issue','Priority','Status','Date','Est Cost','Actual Cost','Reporter','Phone','Assigned','Vendor'];
+  const rows = allTickets.map(t => [t.id,t.brandName,t.outlet,t.category,`"${t.title}"`,t.priority,t.status,t.date,t.estCost||'',t.actualCost||'',t.reporter,t.phone,t.assigned,t.vendorName].join(','));
+  const csv = [h.join(','),...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'maintenance_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3500);
+}
+
+// INIT
+loadData();
+// Auto-refresh every 30s
+setInterval(loadData, 30000);
+</script>
+</body>
+</html>

@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Maintenance Report — Staff Form</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap');
+
+  :root {
+    --mfm:   #C8102E;
+    --tr:    #8B1A1A;
+    --nyss:  #1A3A5C;
+    --brand-active: #C8102E;
+    --accent:  #F59E0B;
+    --success: #10B981;
+    --danger:  #EF4444;
+    --warn:    #F97316;
+    --info:    #3B82F6;
+    --bg:      #F4F6F9;
+    --surface: #FFFFFF;
+    --border:  #E2E8F0;
+    --text:    #1E293B;
+    --muted:   #64748B;
+    --light:   #94A3B8;
+    --radius:  14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { min-height: 100%; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); }
+
+  /* ── HEADER ── */
+  .header {
+    background: #1A2E44;
+    padding: 0;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .header-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px;
+  }
+  .logo { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -.3px; }
+  .logo span { color: var(--accent); }
+  .header-sub { font-size: 12px; color: rgba(255,255,255,.55); }
+
+  /* brand bar */
+  .brand-bar {
+    display: flex; gap: 0; border-top: 1px solid rgba(255,255,255,.1);
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .brand-bar::-webkit-scrollbar { display: none; }
+  .brand-tab {
+    flex: 1; min-width: 110px; padding: 10px 12px;
+    border: none; background: none; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600;
+    color: rgba(255,255,255,.5); letter-spacing: .2px;
+    border-bottom: 3px solid transparent; transition: all .2s;
+    white-space: nowrap;
+  }
+  .brand-tab.active { color: #fff; border-bottom-color: var(--accent); }
+  .brand-tab.mfm.active  { border-bottom-color: #EF4444; }
+  .brand-tab.tr.active   { border-bottom-color: #F59E0B; }
+  .brand-tab.nyss.active { border-bottom-color: #60A5FA; }
+
+  /* ── MAIN ── */
+  .main { max-width: 560px; margin: 0 auto; padding: 24px 16px 60px; }
+
+  /* section cards */
+  .card {
+    background: var(--surface); border-radius: var(--radius);
+    padding: 20px; margin-bottom: 16px;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  }
+  .card-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px; font-weight: 700;
+    color: var(--muted); text-transform: uppercase; letter-spacing: .7px;
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .card-title .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent); flex-shrink: 0;
+  }
+
+  /* fields */
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block; font-size: 13px; font-weight: 600;
+    color: var(--text); margin-bottom: 6px;
+  }
+  .field label .req { color: var(--danger); margin-left: 2px; }
+  .field label .hint {
+    font-size: 11px; font-weight: 400; color: var(--muted);
+    margin-left: 6px;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%; border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 11px 14px; font-size: 14px; font-family: 'Inter', sans-serif;
+    color: var(--text); background: #fff; outline: none;
+    transition: border-color .2s, box-shadow .2s; -webkit-appearance: none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: #2C4A6E;
+    box-shadow: 0 0 0 3px rgba(44,74,110,.1);
+  }
+  .field textarea { resize: vertical; min-height: 88px; line-height: 1.5; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* outlet hidden initially */
+  #outlet-wrap { display: none; }
+
+  /* priority */
+  .priority-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .p-opt { display: none; }
+  .p-lbl {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 10px 6px; border-radius: 10px; border: 2px solid var(--border);
+    cursor: pointer; font-size: 11px; font-weight: 700; text-align: center;
+    color: var(--muted); transition: all .15s;
+  }
+  .p-lbl .emoji { font-size: 20px; }
+  #pc:checked ~ .priority-grid label[for="pc"] { border-color: #EF4444; background: #FEE2E2; color: #B91C1C; }
+  #ph:checked ~ .priority-grid label[for="ph"] { border-color: #F97316; background: #FFEDD5; color: #C2410C; }
+  #pm:checked ~ .priority-grid label[for="pm"] { border-color: #3B82F6; background: #DBEAFE; color: #1D4ED8; }
+  #pl:checked ~ .priority-grid label[for="pl"] { border-color: #10B981; background: #D1FAE5; color: #065F46; }
+
+  /* photo upload */
+  .photo-zone {
+    border: 2px dashed var(--border); border-radius: 10px;
+    padding: 20px; text-align: center; cursor: pointer;
+    transition: all .2s; position: relative; overflow: hidden;
+  }
+  .photo-zone:hover { border-color: #2C4A6E; background: #F8FAFC; }
+  .photo-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .photo-zone .pz-icon { font-size: 32px; margin-bottom: 8px; }
+  .photo-zone p { font-size: 13px; color: var(--muted); }
+  .photo-zone strong { color: var(--text); }
+  .photo-zone small { font-size: 11px; color: var(--light); display: block; margin-top: 4px; }
+  .photo-previews { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .photo-preview {
+    width: 72px; height: 72px; border-radius: 8px; object-fit: cover;
+    border: 2px solid var(--border); position: relative;
+  }
+  .photo-preview-wrap { position: relative; display: inline-block; }
+  .photo-remove {
+    position: absolute; top: -6px; right: -6px;
+    background: var(--danger); color: #fff; border: none; border-radius: 50%;
+    width: 18px; height: 18px; font-size: 10px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-weight: 700;
+    line-height: 1;
+  }
+
+  /* submit */
+  .btn-submit {
+    width: 100%; padding: 16px; border: none; border-radius: 12px;
+    background: linear-gradient(135deg, #1A2E44 0%, #2C4A6E 100%);
+    color: #fff; font-size: 16px; font-weight: 700;
+    font-family: 'Inter', sans-serif; cursor: pointer; letter-spacing: .2px;
+    box-shadow: 0 4px 16px rgba(26,46,68,.35);
+    transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(26,46,68,.45); }
+  .btn-submit:active { transform: translateY(0); }
+
+  /* success screen */
+  .success-screen {
+    display: none; text-align: center; padding: 60px 24px;
+    animation: fadeIn .4s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .success-icon { font-size: 72px; margin-bottom: 16px; }
+  .success-screen h2 { font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+  .success-screen p  { font-size: 15px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+  .ticket-badge {
+    display: inline-block; background: #1A2E44; color: #fff;
+    font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700;
+    padding: 12px 28px; border-radius: 12px; letter-spacing: 1px; margin-bottom: 24px;
+  }
+  .btn-another {
+    width: 100%; max-width: 320px; padding: 14px; border: 2px solid #1A2E44;
+    border-radius: 12px; background: #fff; color: #1A2E44;
+    font-size: 15px; font-weight: 700; font-family: 'Inter', sans-serif;
+    cursor: pointer; transition: all .2s;
+  }
+  .btn-another:hover { background: #1A2E44; color: #fff; }
+
+  /* brand accent top stripe */
+  .brand-stripe {
+    height: 4px; border-radius: 4px 4px 0 0;
+    background: var(--accent); width: 100%; margin-bottom: -4px;
+    display: none;
+  }
+  .brand-stripe.visible { display: block; }
+
+  /* info note */
+  .info-note {
+    background: #EFF6FF; border: 1px solid #BFDBFE;
+    border-radius: 10px; padding: 12px 14px;
+    font-size: 12px; color: #1D4ED8; line-height: 1.5;
+    margin-bottom: 16px;
+    display: flex; gap: 8px;
+  }
+
+  @media (max-width: 400px) {
+    .priority-grid { grid-template-columns: repeat(2, 1fr); }
+    .field-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">Outlet<span>Fix</span> <span style="font-size:13px;font-weight:400;color:rgba(255,255,255,.5)">— Maintenance Report</span></div>
+    </div>
+  </div>
+  <div class="brand-bar">
+    <button class="brand-tab mfm" onclick="selectBrand('MFM')" id="tab-MFM">🐟 Manhattan Fish Market</button>
+    <button class="brand-tab tr"  onclick="selectBrand('TR')"  id="tab-TR">🥩 Tony Roma's</button>
+    <button class="brand-tab nyss" onclick="selectBrand('NYSS')" id="tab-NYSS">🗽 NY Steak Shack</button>
+  </div>
+</div>
+
+<div class="main" id="main-form">
+
+  <div class="info-note">
+    ℹ️ Select your brand above, then fill in all required fields. Photos are required for faster approval. Management will be notified immediately upon submission.
+  </div>
+
+  <!-- OUTLET -->
+  <div class="card" id="outlet-wrap">
+    <div class="card-title"><span class="dot"></span> Outlet Selection</div>
+    <div class="field">
+      <label>Outlet Location <span class="req">*</span></label>
+      <select id="f-outlet">
+        <option value="">Choose outlet...</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- REPORTER -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> Your Information</div>
+    <div class="field-row">
+      <div class="field">
+        <label>Your Name <span class="req">*</span></label>
+        <input id="f-name" type="text" placeholder="Full name">
+      </div>
+      <div class="field">
+        <label>Your Role <span class="req">*</span></label>
+        <select id="f-role">
+          <option value="">Select...</option>
+          <option>Outlet Manager</option>
+          <option>Shift Supervisor</option>
+          <option>Technician</option>
+          <option>Staff</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Contact Number <span class="req">*</span></label>
+      <input id="f-phone" type="tel" placeholder="e.g. 012-3456789" inputmode="tel">
+    </div>
+  </div>
+
+  <!-- ISSUE DETAILS -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> Issue Details</div>
+    <div class="field-row">
+      <div class="field">
+        <label>Category <span class="req">*</span></label>
+        <select id="f-category">
+          <option value="">Select...</option>
+          <option>Electrical</option>
+          <option>Plumbing</option>
+          <option>Air Conditioning / Ventilation</option>
+          <option>Kitchen Equipment</option>
+          <option>Refrigeration</option>
+          <option>POS / Technology</option>
+          <option>Furniture &amp; Fixtures</option>
+          <option>Flooring</option>
+          <option>Ceiling / Roof</option>
+          <option>Pest Control</option>
+          <option>Signage / Lighting</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Area in Outlet <span class="req">*</span></label>
+        <select id="f-area">
+          <option value="">Select...</option>
+          <option>Kitchen</option>
+          <option>Dining Area</option>
+          <option>Bar / Counter</option>
+          <option>Cashier / POS</option>
+          <option>Customer Toilet</option>
+          <option>Staff Toilet</option>
+          <option>Storage Room</option>
+          <option>Office</option>
+          <option>Entrance / Facade</option>
+          <option>Loading Bay</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Issue Title <span class="req">*</span> <span class="hint">Short summary</span></label>
+      <input id="f-title" type="text" placeholder="e.g. Walk-in chiller not cooling">
+    </div>
+    <div class="field">
+      <label>Description <span class="req">*</span></label>
+      <textarea id="f-desc" placeholder="Describe clearly: What happened? When did it start? How is it affecting the outlet?"></textarea>
+    </div>
+
+    <!-- Priority -->
+    <div class="field">
+      <label>Priority Level <span class="req">*</span></label>
+      <input type="radio" name="priority" id="pc" class="p-opt" value="Critical">
+      <input type="radio" name="priority" id="ph" class="p-opt" value="High">
+      <input type="radio" name="priority" id="pm" class="p-opt" value="Medium" checked>
+      <input type="radio" name="priority" id="pl" class="p-opt" value="Low">
+      <div class="priority-grid">
+        <label for="pc" class="p-lbl"><span class="emoji">🔴</span>Critical<span style="font-size:9px;font-weight:400">Cannot operate</span></label>
+        <label for="ph" class="p-lbl"><span class="emoji">🟠</span>High<span style="font-size:9px;font-weight:400">Ops impacted</span></label>
+        <label for="pm" class="p-lbl"><span class="emoji">🔵</span>Medium<span style="font-size:9px;font-weight:400">Partial issue</span></label>
+        <label for="pl" class="p-lbl"><span class="emoji">🟢</span>Low<span style="font-size:9px;font-weight:400">Minor / cosmetic</span></label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Operational Impact</label>
+      <select id="f-impact">
+        <option>Fully operational — minor inconvenience</option>
+        <option>Partially operational — some areas affected</option>
+        <option>Revenue impacted — significant disruption</option>
+        <option>Outlet cannot operate — must close</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- PHOTOS -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> Photos (Required)</div>
+    <div class="photo-zone" id="photo-zone">
+      <input type="file" id="photo-input" accept="image/*" multiple capture="environment" onchange="handlePhotos(this)">
+      <div class="pz-icon">📷</div>
+      <p><strong>Tap to take photo or upload</strong></p>
+      <p>Include clear photos of the damage from multiple angles</p>
+      <small>Max 5 photos · JPG/PNG · 5MB each</small>
+    </div>
+    <div class="photo-previews" id="photo-previews"></div>
+  </div>
+
+  <!-- VENDOR -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> Repair Information</div>
+    <div class="field">
+      <label>Estimated Cost (RM) <span class="hint">if known</span></label>
+      <input id="f-cost" type="number" placeholder="e.g. 350" inputmode="decimal">
+    </div>
+    <div class="field">
+      <label>Have you contacted a vendor/technician?</label>
+      <select id="f-vendor">
+        <option>No — please arrange from HQ</option>
+        <option>Yes — our regular vendor contacted</option>
+        <option>Yes — vendor is on the way</option>
+        <option>Repair already done (reporting after)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Vendor / Technician Name <span class="hint">if applicable</span></label>
+      <input id="f-vendor-name" type="text" placeholder="e.g. AirMaster Services">
+    </div>
+    <div class="field">
+      <label>Additional Notes</label>
+      <textarea id="f-notes" placeholder="Any extra information for the maintenance team..." style="min-height:60px;"></textarea>
+    </div>
+  </div>
+
+  <button class="btn-submit" onclick="submitReport()">
+    <span>Submit Maintenance Report</span> <span>→</span>
+  </button>
+
+</div>
+
+<!-- SUCCESS SCREEN -->
+<div class="success-screen" id="success-screen">
+  <div class="success-icon">✅</div>
+  <h2>Report Submitted!</h2>
+  <p>Your maintenance issue has been logged and<br>management has been notified immediately.</p>
+  <div class="ticket-badge" id="ticket-id-display">TKT-0001</div>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:28px;">
+    Screenshot this ticket number for your reference.<br>
+    Expect a response within your SLA timeframe.
+  </p>
+  <button class="btn-another" onclick="resetForm()">Submit Another Report</button>
+</div>
+
+<script>
+const BRANDS = {
+  MFM: {
+    name: 'Manhattan Fish Market',
+    color: '#EF4444',
+    outlets: [
+      'IOI City Mall','Midvalley','Subang Parade','Sunway Putra',
+      'Melawati Mall','Mahkota Parade','Palm Mall Seremban',
+      'Evo Mall','Hextar Empire City','LSH 33','Sentul','Lotus\'s Kepong'
+    ]
+  },
+  TR: {
+    name: 'Tony Roma\'s',
+    color: '#F59E0B',
+    outlets: ['IOI City Mall','JBCC']
+  },
+  NYSS: {
+    name: 'New York Steak Shack',
+    color: '#60A5FA',
+    outlets: ['Setapak Central','IOI City Mall']
+  }
+};
+
+let selectedBrand = null;
+let photoFiles = [];
+let ticketCounter = parseInt(localStorage.getItem('tkCounter') || '23');
+
+function selectBrand(code) {
+  selectedBrand = code;
+  // update tabs
+  document.querySelectorAll('.brand-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + code).classList.add('active');
+
+  // populate outlets
+  const sel = document.getElementById('f-outlet');
+  sel.innerHTML = '<option value="">Choose outlet...</option>';
+  BRANDS[code].outlets.forEach(o => {
+    const opt = document.createElement('option');
+    opt.value = o; opt.textContent = o;
+    sel.appendChild(opt);
+  });
+  document.getElementById('outlet-wrap').style.display = 'block';
+}
+
+// Photos
+function handlePhotos(input) {
+  const files = Array.from(input.files);
+  const remaining = 5 - photoFiles.length;
+  const toAdd = files.slice(0, remaining);
+  toAdd.forEach(f => {
+    if (f.size > 5 * 1024 * 1024) { alert(`${f.name} exceeds 5MB.`); return; }
+    photoFiles.push(f);
+    const reader = new FileReader();
+    reader.onload = e => addPreview(e.target.result, photoFiles.length - 1);
+    reader.readAsDataURL(f);
+  });
+  if (photoFiles.length >= 5) document.getElementById('photo-zone').style.opacity = '.5';
+}
+
+function addPreview(src, idx) {
+  const wrap = document.createElement('div');
+  wrap.className = 'photo-preview-wrap';
+  wrap.id = 'prev-' + idx;
+  wrap.innerHTML = `<img src="${src}" class="photo-preview"><button class="photo-remove" onclick="removePhoto(${idx})">✕</button>`;
+  document.getElementById('photo-previews').appendChild(wrap);
+}
+function removePhoto(idx) {
+  photoFiles.splice(idx, 1);
+  document.getElementById('photo-previews').innerHTML = '';
+  photoFiles.forEach((f, i) => {
+    const r = new FileReader();
+    r.onload = e => addPreview(e.target.result, i);
+    r.readAsDataURL(f);
+  });
+  document.getElementById('photo-zone').style.opacity = '1';
+}
+
+function getCheckedPriority() {
+  const checked = document.querySelector('input[name="priority"]:checked');
+  return checked ? checked.value : 'Medium';
+}
+
+function submitReport() {
+  if (!selectedBrand) { alert('Please select a brand from the top tabs.'); return; }
+  const outlet = document.getElementById('f-outlet').value;
+  const name   = document.getElementById('f-name').value.trim();
+  const phone  = document.getElementById('f-phone').value.trim();
+  const cat    = document.getElementById('f-category').value;
+  const title  = document.getElementById('f-title').value.trim();
+  const desc   = document.getElementById('f-desc').value.trim();
+
+  if (!outlet) { alert('Please select your outlet.'); return; }
+  if (!name)   { alert('Please enter your name.'); return; }
+  if (!phone)  { alert('Please enter your contact number.'); return; }
+  if (!cat)    { alert('Please select an issue category.'); return; }
+  if (!title)  { alert('Please provide an issue title.'); return; }
+  if (!desc)   { alert('Please describe the issue.'); return; }
+  if (photoFiles.length === 0) {
+    if (!confirm('No photos attached. Photos help speed up approval. Submit anyway?')) return;
+  }
+
+  ticketCounter++;
+  localStorage.setItem('tkCounter', ticketCounter);
+  const ticketId = 'TKT-' + String(ticketCounter).padStart(4, '0');
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+
+  // Build photo data URLs for storage
+  const photoPromises = photoFiles.map(f => new Promise(res => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.readAsDataURL(f);
+  }));
+
+  Promise.all(photoPromises).then(photos => {
+    const ticket = {
+      id: ticketId,
+      brand: selectedBrand,
+      brandName: BRANDS[selectedBrand].name,
+      outlet,
+      reporter: name,
+      role: document.getElementById('f-role').value,
+      phone,
+      category: cat,
+      area: document.getElementById('f-area').value,
+      title,
+      desc,
+      priority: getCheckedPriority(),
+      impact: document.getElementById('f-impact').value,
+      estCost: document.getElementById('f-cost').value ? 'RM ' + parseFloat(document.getElementById('f-cost').value).toLocaleString() : '—',
+      actualCost: '—',
+      vendor: document.getElementById('f-vendor').value,
+      vendorName: document.getElementById('f-vendor-name').value,
+      notes: document.getElementById('f-notes').value,
+      photos: photos,
+      status: 'Open',
+      date: dateStr,
+      submitted: now.toISOString(),
+      timeline: [`${dateStr} — Reported by ${name} (${BRANDS[selectedBrand].name}, ${outlet})`],
+      assigned: 'TBC'
+    };
+
+    // Save to localStorage (shared with dashboard)
+    let all = JSON.parse(localStorage.getItem('maint_tickets') || '[]');
+    all.unshift(ticket);
+    localStorage.setItem('maint_tickets', JSON.stringify(all));
+
+    // Show success
+    document.getElementById('ticket-id-display').textContent = ticketId;
+    document.getElementById('main-form').style.display = 'none';
+    document.getElementById('success-screen').style.display = 'block';
+    window.scrollTo(0, 0);
+  });
+}
+
+function resetForm() {
+  document.getElementById('main-form').style.display = 'block';
+  document.getElementById('success-screen').style.display = 'none';
+  document.getElementById('main-form').reset?.();
+  ['f-name','f-phone','f-title','f-desc','f-cost','f-vendor-name','f-notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  ['f-outlet','f-role','f-category','f-area','f-impact','f-vendor'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.selectedIndex = 0;
+  });
+  document.getElementById('pm').checked = true;
+  photoFiles = [];
+  document.getElementById('photo-previews').innerHTML = '';
+  document.getElementById('photo-zone').style.opacity = '1';
+  selectedBrand = null;
+  document.getElementById('outlet-wrap').style.display = 'none';
+  document.querySelectorAll('.brand-tab').forEach(t => t.classList.remove('active'));
+  window.scrollTo(0, 0);
+}
+</script>
+</body>
+</html>
